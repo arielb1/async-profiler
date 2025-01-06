@@ -258,6 +258,10 @@ class Lookup {
                 char buf[32];
                 snprintf(buf, sizeof(buf), "%p", method);
                 fillNativeMethodInfo(mi, buf, NULL);
+            } else if (frame.bci == BCI_MAGIC) {
+                char buf[32];
+                snprintf(buf, sizeof(buf), "%p", method);
+                fillNativeMethodInfo(mi, buf, NULL);
             } else if (frame.bci == BCI_ERROR) {
                 fillNativeMethodInfo(mi, (const char*)method, NULL);
             } else {

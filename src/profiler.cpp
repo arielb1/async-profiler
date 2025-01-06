@@ -3,6 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <atomic>
 #include <algorithm>
 #include <dlfcn.h>
 #include <unistd.h>
@@ -326,6 +327,16 @@ jmethodID Profiler::getCurrentCompileTask() {
     return NULL;
 }
 
+typedef uint64_t (*asprof_helper_t)(void);
+
+static std::atomic<asprof_helper_t> ASPROF_HELPER;
+
+extern "C" {
+    DLLEXPORT void asprof_set_helper(asprof_helper_t helper) {
+        ASPROF_HELPER.store(helper);
+    }
+}
+
 int Profiler::getNativeTrace(void* ucontext, ASGCT_CallFrame* frames, EventType event_type, int tid, StackContext* java_ctx) {
     const void* callchain[MAX_NATIVE_FRAMES];
     int native_frames;
@@ -341,7 +352,15 @@ int Profiler::getNativeTrace(void* ucontext, ASGCT_CallFrame* frames, EventType 
         native_frames = StackWalker::walkFP(ucontext, callchain, MAX_NATIVE_FRAMES, java_ctx);
     }
 
-    return convertNativeTrace(native_frames, callchain, frames, event_type);
+    asprof_helper_t helper = ASPROF_HELPER.load();
+
+    if (helper == NULL || native_frames == MAX_NATIVE_FRAMES) {
+        return convertNativeTrace(native_frames, callchain, frames, event_type);
+    } else {
+        frames[0].bci = BCI_MAGIC;
+        frames[0].method_id = (jmethodID) (helper)();
+        return 1 + convertNativeTrace(native_frames, callchain, frames + 1, event_type);
+    }
 }
 
 int Profiler::convertNativeTrace(int native_frames, const void** callchain, ASGCT_CallFrame* frames, EventType event_type) {

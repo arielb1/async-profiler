@@ -298,6 +298,12 @@ const char* FrameName::name(ASGCT_CallFrame& frame, bool for_matching) {
             return _str.assign(buf).c_str();
         }
 
+        case BCI_MAGIC: {
+            char buf[32];
+            snprintf(buf, sizeof(buf), "%p", frame.method_id);
+            return _str.assign(buf).c_str();
+        }
+
         case BCI_ERROR:
             return _str.assign("[").append((const char*)frame.method_id).append("]").c_str();
 

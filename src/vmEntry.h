@@ -50,6 +50,7 @@ enum ASGCT_CallFrameType {
     BCI_THREAD_ID           = -16,  // method_id designates a thread
     BCI_ADDRESS             = -17,  // method_id is a PC address
     BCI_ERROR               = -18,  // method_id is an error string
+    BCI_MAGIC               = -19,  // hocus pocus
 };
 
 // See hotspot/src/share/vm/prims/forte.cpp
