@@ -119,12 +119,24 @@ ThreadState WallClock::getThreadState(void* ucontext) {
     return THREAD_RUNNING;
 }
 
+typedef uint64_t (*asprof_helper_t)(void);
+
+static std::atomic<asprof_helper_t> ASPROF_HELPER;
+
+extern "C" {
+    DLLEXPORT void asprof_set_helper(asprof_helper_t helper) {
+        ASPROF_HELPER.store(helper);
+    }
+}
+
 void WallClock::signalHandler(int signo, siginfo_t* siginfo, void* ucontext) {
     if (_mode == WALL_BATCH) {
         WallClockEvent event;
+        asprof_helper_t helper = ASPROF_HELPER.load();
         event._start_time = TSC::ticks();
         event._thread_state = getThreadState(ucontext);
         event._samples = 1;
+        event._app_word = (helper != NULL) ? (helper)() : 0;
         u64 trace = Profiler::instance()->recordSample(ucontext, _interval, WALL_CLOCK_SAMPLE, &event);
         if (event._thread_state == THREAD_SLEEPING) {
             _thread_cpu_time_buf.add(trace);

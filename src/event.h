@@ -46,6 +46,7 @@ class WallClockEvent : public Event {
     u64 _start_time;
     ThreadState _thread_state;
     u32 _samples;
+    u64 _app_word;
 };
 
 class AllocEvent : public EventWithClassId {
